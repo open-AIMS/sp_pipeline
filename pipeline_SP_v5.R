@@ -107,23 +107,9 @@ source("scripts/make_predictive_layer.R")
 source("scripts/INLA_model.R")
 
 ##################################
-############ INLA VARITIONAL BAYES model
-##################################
-
-# Without covariates
-#source("scripts/INLA_VB_model_without.R")
-
-# With covariates
-#source("scripts/INLA_VB_model.R")
-
-##################################
 ############ FRK model
 ##################################
 
-# Without covariates
-#source("scripts/FRK_model_without.R")
-
-# With covariates
 source("scripts/FRK_model.R")
 
 ##################################
@@ -157,9 +143,6 @@ n_bootstrap <- 200
 vfold <- 5
 
 source("scripts/ML_model_no.R")
-#source("scripts/ML_model_gp.R")
-#source("scripts/ML_model_bs.R")
-
 
 ##################################
 ############ model predictions (incl. regional level)
@@ -173,22 +156,4 @@ source("scripts/model_predictions.R")
 
 source("scripts/model_checks.R")
 
-################################################## OLD 
 
-##################################
-############ leave-out data analysis 
-##################################
-
-#source("scripts/leave_out_data_run.R")
-
-##################################
-############ model diagnostics 
-##################################
-
-#source("scripts/model_performances.R")
-
-##################################
-############ rendering the report 
-##################################
-
-#source("scripts/report.qmd")
