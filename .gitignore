@@ -4,14 +4,6 @@ output/
 ignore/
 old/
 
-
-scripts/*
-!scripts/resources/*
-!scripts/*.qmd
-!scripts/styles.css
-!scripts/*.R
-
-
 *.pdf
 *.zip
 Rplot.pdf
@@ -23,3 +15,5 @@ Rplot.pdf
 TODO.*md
 .Rproj.user
 .Rproj
+.html
+
