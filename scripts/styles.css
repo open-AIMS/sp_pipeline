@@ -1,0 +1,17 @@
+.quarto-title-block .quarto-title-banner { 
+  background-image: url(resources/AIMSLogo_White_inline.png);
+  background-size: 400px;
+  background-position: left;
+  background-repeat: no-repeat;
+  padding-left: 10px;
+  background-origin: content-box;
+  /* Optional: Add general styles for the title block */
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+.author {
+    margin-right: 10px; /* Adjust spacing if necessary */
+}
+

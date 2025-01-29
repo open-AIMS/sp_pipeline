@@ -1,0 +1,448 @@
+---
+title: "Automated report"
+subtitle: "Predictive performance of spatio-temporal model(s)"
+author:
+  - name: Julie Vercelloni
+    corresponding: true
+    email: j.vercelloni@aims.gov.au
+    affiliations:
+      - ref: aimsqld
+      - ref: qut
+  - name: Murray Logan
+    email: m.logan@aims.gov.au
+    affiliations:
+      - ref: aimsqld
+affiliations:
+  - id: aimsqld
+    name: Australian Institute of Marine Science, Cape Cleveland, Queensland 4810
+  - id: qut
+    name: Centre for Data Science, Queensland University of Technology, Brisbane, Queensland 4000
+engine: knitr
+format:
+  html:
+    toc: true
+    toc-location: left
+    title-block-banner: true
+    toc-depth: 3
+    highlight-style: atom-one
+    embed-resources: true
+    theme:
+      light: flatly
+      dark: darkly
+    code-overflow: wrap
+    code-fold: false
+    number-sections: true
+    number-depth: 2
+    shift-heading-level-by: -1
+    crossref:
+      lst-title: Code listing
+    fig-align: center
+    text-align: center
+    acm-html: default
+css: styles.css
+execute: 
+  message: false
+  warning: false
+  cache: true
+editor:
+  markdown:
+    wrap: 72
+---
+
+```{r, chunkOpts, echo = FALSE}
+knitr::opts_chunk$set(cache = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = "..")
+```
+
+::: {.callout-caution collapse="true"}
+I am an automated report that reads results from the home folder. The number of simulations and models are selected by the user.   
+:::
+### Simulation summary {.unnumbered}
+
+```{r}
+#| include: true
+#| echo: false
+#| eval: true
+#| cache: false
+
+rm(list=ls())
+
+# Source packages and functions 
+path <- "../"
+source(paste0(path,"R/packages.R"))
+source(paste0(path,"R/functions.R"))
+```
+
+```{r}
+#| include: true
+#| echo: false
+#| eval: true
+#
+# Grep names and locations of simulations in the home folder
+all_dirs <- list.dirs(path, full.names = FALSE, recursive = FALSE)
+exclude_patterns <- c("R", "scripts", "old")
+included_dirs <- all_dirs[!sapply(all_dirs, function(dir) any(grepl(paste(exclude_patterns, collapse = "|"), dir)))] 
+
+# Grep the models that ran for each simulations 
+file <- list.files(str_glue("{path}{included_dirs}/model_outputs/full_run"),
+    full.names = TRUE
+  )
+
+# Extract second term and last term without .Rdata
+table_data <- data.frame(
+  simulation = map_chr(str_split(file, "/"), 2),               
+  model = str_remove(str_remove(file, "^.*/"), "\\.Rdata$")) %>%
+  dplyr::group_by(simulation) %>%
+  dplyr::summarize(
+    number_of_models = n(),                            
+    model_names = toString(unique(model))  
+  )
+
+# Assign figure path
+assign("FIGURES_PATH", "/report/extra/", envir = .GlobalEnv)
+```
+
+There are `r length(included_dirs)` simulations in the home folder.  
+
+```{r}
+#| label: tbl-mod
+#| eval: true
+#| echo: false
+#| tbl-cap: Number of models per simulation. 
+knitr::kable(table_data)
+```
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Predictive performance 
+
+A total of four predictive measures are reported: 
+
+* 95% coverage interval (Cvg) - evaluates how often predictions include true observations, with the goal of capturing the true values 95% of the time. 
+* 95% interval score (IS) - rewards prediction intervals that include the true observations (accuracy) and penalizes those that are too narrow or too wide (precision).  
+* Root-mean-squared prediction error (RMSPE) - how far off model predictions are from true observations without considering for uncertainty.
+* Continuous Ranked Probability Score (CRPS) - represents the quality of the predictions over the entire predictive probability distribution penalizing predictions that are inaccurate, imprecise or overconfident.  
+
+These predictive measures give a single number with low scores representing better performances. In addition, the time (in min) associated with the computation of model fit is also reported in the below figure. 
+
+::: {.panel-tabset collapse="true"}
+
+#### By model 
+```{r, fig.width=15, fig.height=15}
+#| label: fig-mod
+#| eval: true
+#| echo: false
+#| fig-cap: Model predictive performances for each model. 
+
+# level 1 = plots from the home folder 
+print_attr_plots_level1(
+  list_folders = included_dirs,
+  name_plot = "viz_perf_model_"
+)
+
+```
+:::
+
+::: {.panel-tabset collapse="true"}
+
+#### By simulation 
+
+```{r, fig.width=15, fig.height=15}
+#| label: fig-sim
+#| eval: true
+#| echo: false
+#| fig-cap: Model predictive performances for each simulation. 
+
+# level 2 = plots from the simulation folders and put them together, subtitle = add model name on plots if needed   
+fig_perf <- print_attr_plots_level2(
+  list_folders = included_dirs,
+  name_plot = "viz_perf.png"
+)
+
+fig_perf
+```  
+:::
+
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Model fit 
+
+```{r, fig.width=15, fig.height=15}
+#| label: fig-fit
+#| eval: true
+#| echo: false
+#| fig-cap: Predictions versus true values.  
+
+# level 2 = plots from the simulation folders and put them together
+print_attr_plots_level2(
+  list_folders = included_dirs,
+  name_plot = "check_true.png"
+)
+``` 
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Covariate contributions 
+:::
+
+### Simulation details {.unnumbered}
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Regional trends 
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_region <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "pred_broad", 
+    subtitle = TRUE, 
+    plot_labels = TRUE, 
+    label = "Regional trend in",
+    n_cols = 2
+  )
+)
+
+fig_region
+```
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Model prediction
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_pred <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "pred[A-Za-z0-9]+", 
+    subtitle = TRUE, 
+    plot_labels = TRUE, 
+    label = "Predictions in",
+    n_cols = 2
+  )
+)
+
+fig_pred
+```
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Model uncertainty
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_pred_unc <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "pred_unc[A-Za-z0-9]+", 
+    subtitle = TRUE, 
+    plot_labels = TRUE, 
+    label = "Prediction uncertainty in",
+    n_cols = 2
+  )
+)
+
+fig_pred_unc
+```
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Trends at observed locations
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_data <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "pred_traj_tier_data[A-Za-z0-9]+", 
+    subtitle = TRUE, 
+    plot_labels = TRUE, 
+    label = "Predicted trends at observed locations in",
+    n_cols = 2
+  )
+)
+
+fig_data
+```
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Trends at unobserved locations
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_no_data <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "pred_traj_tier_no_data[A-Za-z0-9]+", 
+    subtitle = TRUE, 
+    plot_labels = TRUE, 
+    label = "Predicted trends at unobserved locations in",
+    n_cols = 2
+  )
+)
+
+fig_no_data
+```
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Simulated coral data 
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_synthos <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "trend_data_fixed", 
+    subtitle = TRUE, 
+    plot_labels = TRUE, 
+    label = "Synthos data in",
+    n_cols = 1
+  )
+)
+
+fig_synthos
+```
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Disturbance data 
+
+::: {.panel-tabset collapse="true"}
+
+#### Cyclone data  
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_cyclone <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "cyclone", 
+    subtitle = FALSE, 
+    plot_labels = TRUE, 
+    label = "Cyclone data in",
+    n_cols = 1
+  )
+)
+
+fig_cyclone
+```
+
+:::
+
+::: {.panel-tabset collapse="true"}
+
+#### DHW data 
+
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_dhw <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "dhw", 
+    subtitle = FALSE, 
+    plot_labels = TRUE, 
+    label = "DHW data in",
+    n_cols = 1
+  )
+)
+
+fig_dhw
+``` 
+:::
+
+::: {.panel-tabset collapse="true"}
+
+#### Other data  
+```{r, fig.width=15, fig.height=15}
+#| results: asis
+#| panel: tabset
+
+# level 3 = plots from the simulation folders and put them into new tabs, subtitle = add model name, plot labels = automatic labels  
+fig_ot <- purrr::walk(
+  included_dirs, 
+  ~ print_attr_plots_level3(
+    list_folders = .x, 
+    name_plot = "other", 
+    subtitle = FALSE, 
+    plot_labels = TRUE, 
+    label = "Other disturbance data in",
+    n_cols = 1
+  )
+)
+
+fig_ot
+``` 
+:::
+
+:::
+
+::: {.callout-note appearance="simple" icon=false collapse="true"}
+#### Configuration  
+
+```{r}
+#| results: asis
+#| panel: tabset
+
+# Grep the models that ran for each simulations 
+files <- list.files(
+  str_glue("{path}{included_dirs}"), 
+  pattern = "\\.RData$", 
+  full.names = TRUE
+)
+
+config_tables <- map(files, load_and_extract)  
+
+combined_tables <- map(c("config_sp", "config_large", "config_fine", "config_pt"), ~ {
+  map_dfr(config_tables, .x) # Combine rows from the same named table
+})
+
+# Name the resulting tables
+names(combined_tables) <- c("spatial parameters", "large-scale parameters", "fine-scale parameters", "sampling design configuration")
+
+purrr::walk2(names(combined_tables), combined_tables, ~ {
+  # Add a markdown heading and caption
+  cat("####", .x, "\n\n")  
+  # Create a dynamic table label in Quarto format
+  div_label <- paste0("#tbl-", gsub(" ", "", .x))  # Remove spaces from table names
+  cat("\n::: {", div_label, "}\n", sep = "")   # Open a Quarto fenced div with the label
+  caption_text <- paste("Configuration of", .x)
+  print(kable(.y, align = 'c', format = "markdown", caption = caption_text))
+  cat("\n:::\n\n")  # Close the Quarto fenced div
+})
+
+```
+:::
