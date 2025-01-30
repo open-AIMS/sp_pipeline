@@ -16,6 +16,7 @@ module load R singularity gcc/10.2.0
 BASE_DIR="SP_models"
 SIF_IMAGE="$BASE_DIR/synthos.sif"
 REPORT_SCRIPT="SP_models/scripts/report_v2.qmd"
+MODEL_PERF_SCRIPT="SP_models/scripts/model_perf_allsim.R"
 
 # Array of scripts to run
 SP_SCRIPTS=(
@@ -35,7 +36,12 @@ done
 # Wait for all background tasks to finish
 wait
 
-# Run Quarto report generation **after** all scripts finish
+# Run model performance script before report generation
+echo "Running model performance analysis..."
+singularity exec -B "$BASE_DIR:/home/Project" "$SIF_IMAGE" Rscript "$MODEL_PERF_SCRIPT"
+
+# Run Quarto report generation
+echo "Generating Quarto report..."
 singularity exec -B "$BASE_DIR:/home/Project" "$SIF_IMAGE" quarto render "$REPORT_SCRIPT"
 
-echo "All SP scripts and report generation completed."
+echo "All SP scripts, model performance analysis, and report generation completed."

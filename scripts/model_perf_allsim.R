@@ -11,7 +11,7 @@ source("R/functions.R")
 # Grep names of simulations 
 path <- "./"
 all_dirs <- list.dirs(path, full.names = FALSE, recursive = FALSE)
-exclude_patterns <- c("R", "scripts", "old")
+exclude_patterns <- c("R", "scripts", ".git")
 included_dirs <- all_dirs[!sapply(all_dirs, function(dir) any(grepl(paste(exclude_patterns, collapse = "|"), dir)))] 
 
 path_fig.list <- list()
