@@ -19,4 +19,4 @@ to be added
 This repository is provided by the authors under the MIT License ([MIT](http://opensource.org/licenses/MIT)).
 
 ## Bug reporting
-* Please [report any issues or bugs](https://github.com/open-aims/namma_methods_comparison/issues).
+* Please [report any issues or bugs](https://github.com/open-aims/sp_pipeline/issues).
